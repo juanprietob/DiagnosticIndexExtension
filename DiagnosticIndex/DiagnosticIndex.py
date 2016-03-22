@@ -70,7 +70,6 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         #          Tab: Creation of New Classification Groups
         self.collapsibleButton_creationClassificationGroups = self.logic.get('CollapsibleButton_creationClassificationGroups')
         self.pathLineEdit_NewGroups = self.logic.get('PathLineEdit_NewGroups')
-        self.pathLineEdit_IncreaseExistingData = self.logic.get('PathLineEdit_IncreaseExistingData')
         self.collapsibleGroupBox_previewVTKFiles = self.logic.get('CollapsibleGroupBox_previewVTKFiles')
         self.checkableComboBox_ChoiceOfGroup = self.logic.get('CheckableComboBox_ChoiceOfGroup')
         self.tableWidget_VTKFiles = self.logic.get('tableWidget_VTKFiles')
@@ -99,7 +98,6 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         #     disable/enable and hide/show widget
         self.spinBox_healthyGroup.setDisabled(True)
         self.pushButton_previewGroups.setDisabled(True)
-        self.pathLineEdit_IncreaseExistingData.setDisabled(True)
         self.pushButton_compute.setDisabled(True)
         self.pushButton_compute.setDisabled(True)
         self.directoryButton_exportNewClassification.setDisabled(True)
@@ -162,7 +160,6 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         self.collapsibleButton_creationClassificationGroups.connect('clicked()',
                                                                     lambda: self.onSelectedCollapsibleButtonOpen(self.collapsibleButton_creationClassificationGroups))
         self.pathLineEdit_NewGroups.connect('currentPathChanged(const QString)', self.onNewGroups)
-        self.pathLineEdit_IncreaseExistingData.connect('currentPathChanged(const QString)', self.onIncreaseExistingData)
         self.checkableComboBox_ChoiceOfGroup.connect('checkedIndexesChanged()', self.onCheckableComboBoxValueChanged)
         self.pushButton_previewVTKFiles.connect('clicked()', self.onPreviewVTKFiles)
         self.pushButton_compute.connect('clicked()', self.onComputeNewClassificationGroups)
@@ -389,49 +386,6 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         self.pushButton_previewVTKFiles.setEnabled(True)
         self.pushButton_compute.setEnabled(True)
 
-    def onIncreaseExistingData(self):
-        # Check if the path exists:
-        if not os.path.exists(self.pathLineEdit_IncreaseExistingData.currentPath):
-            return
-
-        print "------Increase Existing Data PathLine------"
-
-        # Check if it's a CSV file
-        condition1 = self.logic.checkExtension(self.pathLineEdit_IncreaseExistingData.currentPath, ".csv")
-        if not condition1:
-            self.pathLineEdit_IncreaseExistingData.setCurrentPath(" ")
-            return
-
-        # Download the CSV file
-        self.logic.readCSVFile(self.pathLineEdit_IncreaseExistingData.currentPath)
-
-        if os.path.exists(self.pathLineEdit_selectionClassificationGroups.currentPath):
-            self.dictVTKFiles = self.dictGroups
-            self.dictGroups = dict()
-            condition2 = self.logic.creationDictVTKFiles(self.dictVTKFiles)
-
-            # If the file is not conformed:
-            #    Re-initialization of the dictionary containing all the data
-            #    which will be used to create a new Classification Groups
-            if not condition2:
-                self.dictVTKFiles = dict()
-                self.pathLineEdit_IncreaseExistingData.setCurrentPath(" ")
-                return
-        else:
-            # Error:
-            slicer.util.errorDisplay('No Existing Data to increase')
-
-        # Fill the table for the preview of the vtk files in Shape Population Viewer
-        self.logic.fillTableForPreviewVTKFilesInSPV(self.dictVTKFiles,
-                                                    self.checkableComboBox_ChoiceOfGroup,
-                                                    self.tableWidget_VTKFiles)
-
-        # Enable/disable buttons
-        self.checkableComboBox_ChoiceOfGroup.setEnabled(True)
-        self.tableWidget_VTKFiles.setEnabled(True)
-        self.pushButton_previewVTKFiles.setEnabled(True)
-        self.pushButton_compute.setEnabled(True)
-
     # Function to manage the checkable combobox to allow the user to choose the group that he wants to preview in SPV
     def onCheckableComboBoxValueChanged(self):
         # Update the checkboxes in the qtableWidget of each vtk file
@@ -533,7 +487,7 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
     #    - Launch the CLI ShapePopulationViewer
     def onPreviewVTKFiles(self):
         print "--- Preview VTK Files in ShapePopulationViewer ---"
-        if os.path.exists(self.pathLineEdit_NewGroups.currentPath) or os.path.exists(self.pathLineEdit_IncreaseExistingData.currentPath):
+        if os.path.exists(self.pathLineEdit_NewGroups.currentPath):
             # Creation of a color map to visualize each group with a different color in ShapePopulationViewer
             self.logic.addColorMap(self.tableWidget_VTKFiles, self.dictVTKFiles)
 
@@ -734,8 +688,7 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
             if self.checkBox_fileInGroups.isChecked():
                 self.checkBox_fileInGroups.setChecked(False)
             self.checkBox_fileInGroups.setDisabled(True)
-        elif os.path.exists(self.pathLineEdit_NewGroups.currentPath) \
-                or os.path.exists(self.pathLineEdit_IncreaseExistingData.currentPath):
+        elif os.path.exists(self.pathLineEdit_NewGroups.currentPath):
             self.checkBox_fileInGroups.setEnabled(True)
 
         # Check if the selected file is in the groups used to create the classification groups
