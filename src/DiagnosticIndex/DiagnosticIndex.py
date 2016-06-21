@@ -154,16 +154,6 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         horizontalHeader.setResizeMode(3,qt.QHeaderView.ResizeToContents)
         self.tableWidget_VTKFiles.verticalHeader().setVisible(False)
 
-        #     configuration of the table to display the result
-        self.tableWidget_result.setColumnCount(2)
-        self.tableWidget_result.setHorizontalHeaderLabels([' VTK files ', ' Assigned Group '])
-        self.tableWidget_result.setColumnWidth(0, 300)
-        horizontalHeader = self.tableWidget_result.horizontalHeader()
-        horizontalHeader.setStretchLastSection(False)
-        horizontalHeader.setResizeMode(0,qt.QHeaderView.Stretch)
-        horizontalHeader.setResizeMode(1,qt.QHeaderView.ResizeToContents)
-        self.tableWidget_result.verticalHeader().setVisible(False)
-
         # --------------------------------------------------------- #
         #                       Connection                          #
         # --------------------------------------------------------- #
@@ -653,6 +643,9 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
             self.pathLineEdit_selectionClassificationGroups.setCurrentPath(" ")
             return
 
+        # Configuration of the table of the result
+        self.initializeResultTable(len(self.dictShapeModels))
+
         # Enable/disable buttons
         self.spinBox_healthyGroup.setEnabled(True)
         self.pushButton_previewGroups.setEnabled(True)
@@ -839,6 +832,7 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
 
             #      Re-compute the new classification groups
             self.onComputeNewClassificationGroups()
+        # **** **** #
 
         # *** Define the OA index type of a patient ***
         # For each patient:
@@ -848,10 +842,10 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
                 self.logic.computeShapeOALoads(key, patient, value)
 
             # Compute the OA index type of a patient
-            resultgroup = self.logic.computeOAIndex(self.dictGroups.keys())
+            resultOAIndex = self.logic.computeOAIndex(self.dictShapeModels.keys())
 
             # Display the result in the next tab "Result/Analysis"
-            self.displayResult(resultgroup, os.path.basename(patient))
+            self.displayResult(resultOAIndex[0], os.path.basename(patient), resultOAIndex[1])
 
         # Remove the CSV file containing the Shape OA Vector Loads
         self.logic.removeShapeOALoadsCSVFile(self.dictShapeModels.keys())
@@ -869,14 +863,37 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
             self.dictShapeModels = dictShapeModelsTemp
 
             #      Remove the data previously created
-            self.logic.removeDataAfterNCG(self.dictGroups)
+            self.logic.removeDataAfterNCG(self.dictShapeModels)
+        # **** **** #
+
+
 
     # ---------------------------------------------------- #
     #               Tab: Result / Analysis                 #
     # ---------------------------------------------------- #
 
+    # Function to configure the table to display the result
+    def initializeResultTable(self, numberOfGroups):
+        columnTable = numberOfGroups + 2
+        self.tableWidget_result.setColumnCount(columnTable)
+        hearderLabelList = list()
+        hearderLabelList.append(" VTK files ")
+        hearderLabelList.append(" Assigned Group ")
+        for i in range(1, numberOfGroups + 1):
+            hearderLabel = " G" + str(i) + " OA Index "
+            hearderLabelList.append(hearderLabel)
+
+        self.tableWidget_result.setHorizontalHeaderLabels(hearderLabelList)
+        self.tableWidget_result.setColumnWidth(0, 500)
+        horizontalHeader = self.tableWidget_result.horizontalHeader()
+        horizontalHeader.setStretchLastSection(False)
+        horizontalHeader.setResizeMode(0,qt.QHeaderView.Stretch)
+        for i in range(1, numberOfGroups + 2):
+            horizontalHeader.setResizeMode(i,qt.QHeaderView.ResizeToContents)
+        self.tableWidget_result.verticalHeader().setVisible(False)
+
     # Function to display the result in a table
-    def displayResult(self, resultGroup, VTKfilename):
+    def displayResult(self, assignedGroup, VTKfilename, OAIndexList):
         row = self.tableWidget_result.rowCount
         self.tableWidget_result.setRowCount(row + 1)
         # Column 0: VTK file
@@ -884,9 +901,15 @@ class DiagnosticIndexWidget(ScriptedLoadableModuleWidget):
         labelVTKFile.setAlignment(0x84)
         self.tableWidget_result.setCellWidget(row, 0, labelVTKFile)
         # Column 1: Assigned Group
-        labelAssignedGroup = qt.QLabel(resultGroup)
+        labelAssignedGroup = qt.QLabel(assignedGroup)
         labelAssignedGroup.setAlignment(0x84)
         self.tableWidget_result.setCellWidget(row, 1, labelAssignedGroup)
+        for OAIndex in OAIndexList:
+            column = 2 + OAIndexList.index(OAIndex)
+            labelOAIndex = qt.QLabel(OAIndex)
+            labelOAIndex.setAlignment(0x84)
+            self.tableWidget_result.setCellWidget(row, column, labelOAIndex)
+
 
     # Function to export the result in a CSV File
     def onExportResult(self):
@@ -1490,9 +1513,11 @@ class DiagnosticIndexLogic(ScriptedLoadableModuleLogic):
                 sum = sum + math.pow(ShapeOALoad, 2)
             OAIndexList.append(math.sqrt(sum)/tableShapeOAVectorLoads.GetNumberOfRows())
         # print OAIndexList
-        resultGroup = OAIndexList.index(min(OAIndexList)) + 1
-        # print "RESULT: " + str(resultGroup)
-        return resultGroup
+        result = list()
+        asignedGroup = OAIndexList.index(min(OAIndexList)) + 1
+        result.append(asignedGroup)
+        result.append(OAIndexList)
+        return result
 
     # Function to remove the shape model of each group
     def removeShapeOALoadsCSVFile(self, keylist):
@@ -1505,17 +1530,24 @@ class DiagnosticIndexLogic(ScriptedLoadableModuleLogic):
         CSVFilePath = directory + "/" + CSVbasename
         file = open(CSVFilePath, 'w')
         cw = csv.writer(file, delimiter=',')
-        cw.writerow(['VTK Files', 'Assigned Group'])
-        for row in range(0,table.rowCount):
-            # Recovery of the filename of vtk file
-            qlabel = table.cellWidget(row, 0)
-            vtkFile = qlabel.text
-            # Recovery of the assigned group
-            qlabel = table.cellWidget(row, 1)
-            assignedGroup = qlabel.text
+        header = list()
+        header.append("VTK Files")
+        header.append("Assigned Group")
+        for column in range(2, table.columnCount):
+            headertext = "G" + str(column - 1) + " OA Index"
+            header.append(headertext)
+        print header
+        cw.writerow(header)
+        label = list()
+        for row in range(0, table.rowCount):
+            for column in range(0, table.columnCount):
+                # Recovery of the filename of vtk file
+                qlabel = table.cellWidget(row, column)
+                label.append(qlabel.text)
 
             # Write the result in the CSV File
-            cw.writerow([vtkFile, str(assignedGroup)])
+            cw.writerow(label)
+            label = list()
 
 class DiagnosticIndexTest(ScriptedLoadableModuleTest):
     pass
