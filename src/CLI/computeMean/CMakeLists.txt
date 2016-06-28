@@ -1,28 +1,3 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(computeMean)
-
-# Slicer
-find_package(Slicer REQUIRED)
-
-# VTK
-find_package(VTK REQUIRED)
-include(${VTK_USE_FILE})
-
-# Statismo
-find_package(statismo REQUIRED)
-
-# Slicer Execution Model
-find_package(SlicerExecutionModel REQUIRED)
-include(${SlicerExecutionModel_USE_FILE})
-include(${GenerateCLP_USE_FILE})
-
-# Link Statismo and VTK
-#include_directories(${statismo_INCLUDE_DIRS})
-#link_directories(${VTK_LIBRARY_DIRS} ${statismo_LIBRARY_DIRS})
-
-#generateCLP(saveModel.cxx saveModel.xml)
-
-set(INSTALL_RUNTIME_DEST ${SlicerExecutionModel_DEFAULT_CLI_INSTALL_RUNTIME_DESTINATION}/../hidden-cli-modules)
 
 SEMMacroBuildCLI(
   NAME computeMean

@@ -84,11 +84,6 @@ set(${LOCAL_PROJECT_NAME}_DEPENDENCIES statismo )
 # where '<EP_VAR>' is an external project variable and TYPE is either BOOL, STRING, PATH or FILEPATH.
 # TODO Variable appended to this list will be automatically exported in ${LOCAL_PROJECT_NAME}Config.cmake,
 # prefix '${LOCAL_PROJECT_NAME}_' will be prepended if it applies.
-set(${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS)
-
-# The macro '_expand_external_project_vars' can be used to expand the list of <EP_VAR>.
-set(${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_ARGS) # List of CMake args to configure BRAINS
-set(${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARNAMES) # List of CMake variable names
 
 # Convenient macro allowing to expand the list of EP_VAR listed in ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS
 # The expanded arguments will be appended to the list ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_ARGS
@@ -168,20 +163,14 @@ endif()
 #-----------------------------------------------------------------------------
 # Add external project CMake args
 #-----------------------------------------------------------------------------
-set(statismo_DIR ${CMAKE_CURRENT_SOURCE_DIR}-build/statismo-build/Statismo-build)
+
 
 list(APPEND ${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_VARS
-     statismo_DIR:PATH
-     GENERATECLP_EXE:PATH
-     SlicerExecutionModel_DIR:PATH
-     VTK_DIR:PATH
      Slicer_DIR:PATH
-     Slicer_USE_FILE:PATH
   )
 
 _expand_external_project_vars()
 set(COMMON_EXTERNAL_PROJECT_ARGS ${${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_ARGS})
-
 if(verbose)
   message("Inner external project args:")
   foreach(arg ${${CMAKE_PROJECT_NAME}_SUPERBUILD_EP_ARGS})

@@ -51,14 +51,14 @@ if(NOT ( DEFINED "USE_SYSTEM_${extProjName}" AND "${USE_SYSTEM_${extProjName}}" 
       )
   endif()
   set(${proj}_CMAKE_OPTIONS
-#-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/${proj}-install
+      -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/${proj}-install
       -DBUILD_EXAMPLES:BOOL=OFF
       -DBUILD_TESTING:BOOL=OFF
       -DBUILD_SHARED_LIBS:BOOL=OFF
-      -DUSE_SYSTEM_HDF5:BOOL=ON
-      -DHDF5_DIR:PATH=${HDF5_DIR}
-      -DUSE_SYSTEM_VTK:BOOL=ON
-      -DVTK_DIR:PATH=${VTK_DIR}
+      #-DUSE_SYSTEM_HDF5:BOOL=ON
+      #-DHDF5_DIR:PATH=${HDF5_DIR}
+      #-DUSE_SYSTEM_VTK:BOOL=ON
+      #-DVTK_DIR:PATH=${VTK_DIR}
     )
 
 ### --- End Project specific additions
@@ -86,7 +86,7 @@ if(NOT ( DEFINED "USE_SYSTEM_${extProjName}" AND "${USE_SYSTEM_${extProjName}}" 
     DEPENDS
       ${${proj}_DEPENDENCIES}
     )
-  set(${extProjName}_DIR ${CMAKE_BINARY_DIR}/${proj}-install/build)
+  set(${extProjName}_DIR ${CMAKE_BINARY_DIR}/${proj}-install/lib/cmake/statismo)
 else()
   if(${USE_SYSTEM_${extProjName}})
     find_package(${extProjName} REQUIRED)
